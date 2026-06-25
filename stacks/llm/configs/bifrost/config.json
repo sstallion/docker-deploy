@@ -1,0 +1,83 @@
+{
+  "$schema": "https://www.getbifrost.ai/schema",
+  "providers": {
+    "vllm": {
+      "keys": [
+        {
+          "name": "LFM2.5-350M",
+          "value": "",
+          "models": ["LFM2.5-350M"],
+          "weight": 1.0,
+          "vllm_key_config": {
+            "url": "http://LFM2_5-350M:8000",
+            "model_name": "LFM2.5-350M"
+          }
+        },
+        {
+          "name": "Qwen3-Coder-Next",
+          "value": "",
+          "models": ["Qwen3-Coder-Next"],
+          "weight": 1.0,
+          "vllm_key_config": {
+            "url": "http://Qwen3-Coder-Next:8000",
+            "model_name": "Qwen3-Coder-Next"
+          }
+        },
+        {
+          "name": "Qwen3-Embedding-8B",
+          "value": "",
+          "models": ["Qwen3-Embedding-8B"],
+          "weight": 1.0,
+          "vllm_key_config": {
+            "url": "http://Qwen3-Embedding-8B:8000",
+            "model_name": "Qwen3-Embedding-8B"
+          }
+        },
+        {
+          "name": "Qwen3.5-0.8B",
+          "value": "",
+          "models": ["Qwen3.5-0.8B"],
+          "weight": 1.0,
+          "vllm_key_config": {
+            "url": "http://Qwen3_5-0_8B:8000",
+            "model_name": "Qwen3.5-0.8B"
+          }
+        },
+        {
+          "name": "Qwen3.6-27B",
+          "value": "",
+          "models": ["Qwen3.6-27B"],
+          "weight": 1.0,
+          "vllm_key_config": {
+            "url": "http://Qwen3_6-27B:8000",
+            "model_name": "Qwen3.6-27B"
+          }
+        }
+      ],
+      "network_config": {
+        "allow_private_network": true
+      }
+    }
+  },
+  "config_store": {
+    "enabled": true,
+    "type": "sqlite",
+    "config": {
+      "path": "/app/data/config.db"
+    }
+  },
+  "vector_store": {
+    "enabled": true,
+    "type": "qdrant",
+    "config": {
+      "host": "qdrant",
+      "port": 6334
+    }
+  },
+  "plugins": [
+    {
+      "enabled": true,
+      "name": "semantic_cache"
+    }
+  ]
+}

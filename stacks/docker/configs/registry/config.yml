@@ -1,0 +1,15 @@
+version: 0.1
+
+storage:
+    filesystem:
+    delete:
+      enabled: true
+
+http:
+  addr: :5000
+  host: https://registry.quuxotic.net
+  secret: tRv06b6UzbWahQ8lHiZhqSjqAaGJPa1VtXs0f7Nb81c=
+
+health:
+  storagedriver:
+    enabled: true

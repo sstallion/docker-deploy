@@ -1,0 +1,49 @@
+version: '3.8'
+
+services:
+  Qwen3-Embedding-8B:
+    image: registry.quuxotic.net/vllm/vllm-openai:v0.22.1
+    command: >-
+      Qwen/Qwen3-Embedding-8B
+        --enable-auto-tool-choice
+        --tool-call-parser qwen3_xml_safe
+        --tool-parser-plugin /vllm-workspace/qwen3_xml_safe.py
+        --max-model-len 32K
+        --served-model-name Qwen3-Embedding-8B
+        --load-format fastsafetensors
+        --gpu-memory-utilization 0.28
+        --kv-cache-memory-bytes 19327352832
+        --kv-cache-dtype fp8
+        --enable-prefix-caching
+        --max-num-batched-tokens 8K
+        --max-num-seqs 8
+        --enable-chunked-prefill
+    configs:
+      - source: qwen3_xml_safe
+        target: /vllm-workspace/qwen3_xml_safe.py
+    deploy:
+      placement:
+        constraints:
+          - node.labels.role==secondary
+          - node.labels.type==gpu
+      resources:
+        reservations:
+          memory: 33.5G
+      restart_policy:
+        condition: on-failure
+    environment:
+      HF_TOKEN:
+      VLLM_MARLIN_USE_ATOMIC_ADD: 1
+    ulimits:
+      memlock: -1
+      stack: 67108864
+    volumes:
+      - /tmp/nvidia-mps:/tmp/nvidia-mps
+      - huggingface:/root/.cache/huggingface
+
+configs:
+  qwen3_xml_safe:
+    file: ./configs/models/qwen3_xml_safe.py
+
+volumes:
+  huggingface:

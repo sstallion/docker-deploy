@@ -1,0 +1,25 @@
+version: '3.8'
+
+services:
+  server:
+    image: itzg/minecraft-server:stable
+    deploy:
+      placement:
+        constraints: [node.labels.type==app]
+      restart_policy:
+        condition: on-failure
+    environment:
+      EULA: 'true'
+      OVERRIDE_SERVER_PROPERTIES: 'false'
+    ports:
+      - 25565:25565
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+      - data:/data
+
+volumes:
+  data:
+    driver_opts:
+      type: nfs
+      o: addr=10.50.0.26,nfsvers=4,rw,nosuid,nodev,noatime,soft
+      device: :/docker/minecraft

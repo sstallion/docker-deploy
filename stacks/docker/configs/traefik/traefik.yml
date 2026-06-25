@@ -1,0 +1,37 @@
+global:
+  checkNewVersion: false
+
+entryPoints:
+  web:
+    address: :80
+    http:
+      redirections:
+        entryPoint:
+          to: websecure
+          scheme: https
+          permanent: true
+
+  websecure:
+    address: :443
+    asDefault: true
+    http:
+      tls:
+        certResolver: letsencrypt
+
+certificatesResolvers:
+  letsencrypt:
+    acme:
+      email: root@quuxotic.net
+      dnsChallenge:
+        provider: cloudflare
+        resolvers:
+          - 1.1.1.1
+          - 1.0.0.1
+      storage: /var/lib/traefik/acme.json
+
+providers:
+  file:
+    filename: /etc/traefik/dynamic.yml
+  swarm:
+    exposedByDefault: false
+    network: traefik_proxy
