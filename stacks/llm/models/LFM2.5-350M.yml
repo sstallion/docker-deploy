@@ -1,0 +1,37 @@
+version: '3.8'
+
+services:
+  LFM2_5-350M:
+    image: registry.quuxotic.net/vllm/vllm-openai:v0.22.1
+    command: >-
+      LiquidAI/LFM2.5-350M
+        --max-model-len 32K
+        --served-model-name LFM2.5-350M
+        --load-format fastsafetensors
+        --gpu-memory-utilization 0.07
+        --max-num-batched-tokens 8K
+        --max-num-seqs 8
+        --enable-chunked-prefill
+        --enforce-eager
+    deploy:
+      placement:
+        constraints:
+          - node.labels.role==secondary
+          - node.labels.type==gpu
+      resources:
+        reservations:
+          memory: 9G
+      restart_policy:
+        condition: on-failure
+    environment:
+      HF_TOKEN:
+      VLLM_MARLIN_USE_ATOMIC_ADD: 1
+    ulimits:
+      memlock: -1
+      stack: 67108864
+    volumes:
+      - /tmp/nvidia-mps:/tmp/nvidia-mps
+      - huggingface:/root/.cache/huggingface
+
+volumes:
+  huggingface:

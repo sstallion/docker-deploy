@@ -1,0 +1,46 @@
+version: '3.8'
+
+# Supported models:
+# - Intel/Qwen3.6-27B-int4-AutoRound
+# - cyankiwi/Qwen3.6-27B-AWQ-INT4
+services:
+  Qwen3_6-27B:
+    image: registry.quuxotic.net/vllm/vllm-openai:v0.22.1
+    command: >-
+      Intel/Qwen3.6-27B-int4-AutoRound
+        --enable-auto-tool-choice
+        --tool-call-parser qwen3_xml
+        --max-model-len 256K
+        --served-model-name Qwen3.6-27B
+        --load-format fastsafetensors
+        --reasoning-parser qwen3
+        --gpu-memory-utilization 0.74
+        --kv-cache-dtype fp8
+        --enable-prefix-caching
+        --max-num-batched-tokens 8K
+        --max-num-seqs 8
+        --enable-chunked-prefill
+        --spec-method mtp
+        --spec-tokens 3
+    deploy:
+      placement:
+        constraints:
+          - node.labels.role==primary
+          - node.labels.type==gpu
+      resources:
+        reservations:
+          memory: 91G
+      restart_policy:
+        condition: on-failure
+    environment:
+      HF_TOKEN:
+      VLLM_MARLIN_USE_ATOMIC_ADD: 1
+    ulimits:
+      memlock: -1
+      stack: 67108864
+    volumes:
+      - /tmp/nvidia-mps:/tmp/nvidia-mps
+      - huggingface:/root/.cache/huggingface
+
+volumes:
+  huggingface:

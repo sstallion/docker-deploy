@@ -1,0 +1,127 @@
+version: '3.8'
+
+services:
+  portainer_agent:
+    image: portainer/agent:lts
+    deploy:
+      mode: global
+    volumes:
+      - /var/lib/docker/volumes:/var/lib/docker/volumes
+      - /var/run/docker.sock:/var/run/docker.sock
+
+  portainer_server:
+    image: portainer/portainer-ce:lts
+    command: -H tcp://portainer_agent:9001 --tlsskipverify
+    deploy:
+      labels:
+        traefik.enable: 'true'
+        traefik.http.routers.portainer.rule: Host(`docker.quuxotic.net`)
+        traefik.http.services.portainer.loadbalancer.server.port: 9000
+      placement:
+        constraints: [node.role==manager]
+      restart_policy:
+        condition: on-failure
+    networks:
+      - default
+      - traefik_proxy
+    volumes:
+      - portainer:/data
+
+  registry:
+    image: registry:3
+    configs:
+      - source: registry
+        target: /etc/distribution/config.yml
+    deploy:
+      labels:
+        traefik.enable: 'true'
+
+        # Allow anonymous read-only access:
+        traefik.http.routers.registry-read.rule: >-
+          Host(`registry.quuxotic.net`) && (Method(`GET`) || Method(`HEAD`))
+        traefik.http.routers.registry-read.service: registry
+
+        # Require authentication for writes:
+        traefik.http.routers.registry-write.rule: Host(`registry.quuxotic.net`)
+        traefik.http.routers.registry-write.middlewares: auth@file
+        traefik.http.routers.registry-write.service: registry
+
+        traefik.http.services.registry.loadbalancer.server.port: 5000
+      placement:
+        constraints: [node.role==manager]
+      restart_policy:
+        condition: on-failure
+    networks:
+      - traefik_proxy
+    volumes:
+      - registry:/var/lib/registry
+
+  traefik:
+    image: traefik:v3
+    configs:
+      - source: traefik_static
+        target: /etc/traefik/traefik.yml
+      - source: traefik_dynamic
+        target: /etc/traefik/dynamic.yml
+    deploy:
+      placement:
+        constraints: [node.role==manager]
+      restart_policy:
+        condition: on-failure
+    environment:
+      CF_DNS_API_TOKEN_FILE: /run/secrets/traefik_cf_token
+    networks:
+      - traefik_proxy
+    ports:
+      - target: 80
+        published: 80
+        protocol: tcp
+        mode: ingress
+      - target: 443
+        published: 443
+        protocol: tcp
+        mode: ingress
+    secrets:
+      - traefik_cf_token
+      - traefik_htpasswd
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - traefik:/var/lib/traefik
+
+  watchtower:
+    image: ghcr.io/nicholas-fedor/watchtower:1
+    deploy:
+      mode: global
+    environment:
+      WATCHTOWER_ROLLING_RESTART: 'true'
+      WATCHTOWER_SCHEDULE: '0 0 2 * * *'
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+      - /var/run/docker.sock:/var/run/docker.sock
+
+networks:
+  traefik_proxy:
+    external: true
+
+volumes:
+  portainer:
+  registry:
+    driver_opts:
+      type: nfs
+      o: addr=10.50.0.26,nfsvers=4,rw,nosuid,nodev,noatime,soft
+      device: :/docker/registry
+  traefik:
+
+configs:
+  registry:
+    file: ./configs/registry/config.yml
+  traefik_static:
+    file: ./configs/traefik/traefik.yml
+  traefik_dynamic:
+    file: ./configs/traefik/dynamic.yml
+
+secrets:
+  traefik_cf_token:
+    external: true
+  traefik_htpasswd:
+    external: true

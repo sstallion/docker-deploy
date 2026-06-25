@@ -1,0 +1,91 @@
+version: '3.8'
+
+services:
+  bifrost:
+    image: maximhq/bifrost:v1.5.15
+    configs:
+      - source: bifrost
+        target: /app/data/config.json
+    deploy:
+      labels:
+        traefik.enable: 'true'
+        traefik.http.routers.bifrost.rule: Host(`api.quuxotic.net`)
+        traefik.http.services.bifrost.loadbalancer.server.port: 8080
+      placement:
+        constraints: [node.labels.type==app]
+      restart_policy:
+        condition: on-failure
+    networks:
+      - default
+      - traefik_proxy
+    volumes:
+      - bifrost:/app/data
+
+  open-webui:
+    image: ghcr.io/open-webui/open-webui:0.9-slim
+    deploy:
+      labels:
+        traefik.enable: 'true'
+        traefik.http.routers.open-webui.rule: Host(`chat.quuxotic.net`)
+        traefik.http.services.open-webui.loadbalancer.server.port: 8080
+      placement:
+        constraints: [node.labels.type==app]
+      restart_policy:
+        condition: on-failure
+    environment:
+      WEBUI_URL: https://chat.quuxotic.net
+      DEFAULT_MODEL_METADATA: >-
+        {
+          "defaultFeatureIds": [
+            "web_search",
+            "code_interpreter"
+          ],
+        }
+      DEFAULT_MODEL_PARAMS: >-
+        {
+          "function_calling": "native"
+        }
+      DEFAULT_USER_ROLE: user
+      DOCKER: 'True'
+      ENABLE_OLLAMA_API: 'False'
+      OPENAI_API_BASE_URLS: http://bifrost:8080/openai
+      ENABLE_FOLLOW_UP_GENERATION: 'False'
+      ENABLE_EVALUATION_ARENA_MODELS: 'False'
+      ENABLE_MESSAGE_RATING: 'False'
+      ENABLE_BASE_MODELS_CACHE: 'True'
+      VECTOR_DB: qdrant
+      QDRANT_URI: http://qdrant:6333
+      ENABLE_WEB_SEARCH: 'True'
+      WEB_SEARCH_RESULT_COUNT: 5
+      WEB_SEARCH_ENGINE: exa
+      EXA_API_KEY:
+      HF_TOKEN:
+    networks:
+      - default
+      - traefik_proxy
+    volumes:
+      - open-webui:/app/backend/data
+
+  qdrant:
+    image: qdrant/qdrant:v1
+    deploy:
+      placement:
+        constraints: [node.labels.type==app]
+      restart_policy:
+        condition: on-failure
+    volumes:
+      - qdrant:/qdrant/storage
+
+networks:
+  traefik_proxy:
+    external: true
+
+volumes:
+  bifrost:
+  huggingface:
+  open-webui:
+  qdrant:
+
+configs:
+  bifrost:
+    file: ./configs/bifrost/config.json
