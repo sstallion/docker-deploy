@@ -10,7 +10,9 @@ services:
         --max-model-len 32K
         --served-model-name Qwen3-Embedding-8B
         --load-format fastsafetensors
-        --gpu-memory-utilization 0.45
+        --gpu-memory-utilization 0.28
+        --kv-cache-memory-bytes 19327352832
+        --kv-cache-dtype fp8
         --enable-prefix-caching
         --max-num-batched-tokens 8K
         --max-num-seqs 8
@@ -22,7 +24,7 @@ services:
           - node.labels.type==gpu
       resources:
         reservations:
-          memory: 55G
+          memory: 33.5G
       restart_policy:
         condition: on-failure
     environment:

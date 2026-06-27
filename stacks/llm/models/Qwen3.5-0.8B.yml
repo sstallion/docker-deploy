@@ -8,21 +8,21 @@ services:
         --enable-auto-tool-choice
         --tool-call-parser qwen3_xml
         --max-model-len 8K
+        --enforce-eager
         --served-model-name Qwen3.5-0.8B
-        --load-format fastsafetensors
-        --gpu-memory-utilization 0.06
-        --language-model-only
+        --gpu-memory-utilization 0.03
+        --kv-cache-memory-bytes 1036269796
         --max-num-batched-tokens 2K
         --max-num-seqs 8
         --enable-chunked-prefill
     deploy:
       placement:
         constraints:
-          - node.labels.role==secondary
+          - node.labels.role==primary
           - node.labels.type==gpu
       resources:
         reservations:
-          memory: 8G
+          memory: 3.6G
       restart_policy:
         condition: on-failure
     environment:

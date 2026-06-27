@@ -14,12 +14,14 @@ services:
         --served-model-name gemma-4-26B-A4B-it
         --load-format fastsafetensors
         --reasoning-parser gemma4
-        --gpu-memory-utilization 0.55
+        --gpu-memory-utilization 0.52
+        --kv-cache-memory-bytes 47721858845
         --kv-cache-dtype fp8
         --enable-prefix-caching
         --max-num-batched-tokens 8K
         --max-num-seqs 8
         --enable-chunked-prefill
+        --moe-backend flashinfer_cutlass
     deploy:
       placement:
         constraints:
@@ -27,13 +29,12 @@ services:
           - node.labels.type==gpu
       resources:
         reservations:
-          memory: 67G
+          memory: 62.1G
       restart_policy:
         condition: on-failure
     environment:
       HF_TOKEN:
       VLLM_MARLIN_USE_ATOMIC_ADD: 1
-      VLLM_USE_FLASHINFER_MOE_FP8: 1
     ulimits:
       memlock: -1
       stack: 67108864

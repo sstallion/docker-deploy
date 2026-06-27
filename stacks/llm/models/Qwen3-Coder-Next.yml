@@ -9,30 +9,31 @@ services:
     command: >-
       Intel/Qwen3-Coder-Next-int4-AutoRound
         --enable-auto-tool-choice
-        --tool-call-parser qwen3_xml
+        --tool-call-parser qwen3_coder
         --max-model-len 256K
         --served-model-name Qwen3-Coder-Next
         --load-format fastsafetensors
-        --gpu-memory-utilization 0.58
+        --gpu-memory-utilization 0.57
+        --kv-cache-memory-bytes 28633115307
         --kv-cache-dtype fp8
         --enable-prefix-caching
         --max-num-batched-tokens 8K
         --max-num-seqs 8
         --enable-chunked-prefill
+        --moe-backend flashinfer_cutlass
     deploy:
       placement:
         constraints:
-          - node.labels.role==primary
+          - node.labels.role==secondary
           - node.labels.type==gpu
       resources:
         reservations:
-          memory: 71G
+          memory: 68.3G
       restart_policy:
         condition: on-failure
     environment:
       HF_TOKEN:
       VLLM_MARLIN_USE_ATOMIC_ADD: 1
-      VLLM_USE_FLASHINFER_MOE_FP8: 1
     ulimits:
       memlock: -1
       stack: 67108864

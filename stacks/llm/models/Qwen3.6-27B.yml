@@ -8,13 +8,17 @@ services:
     image: registry.quuxotic.net/vllm/vllm-openai:v0.22.1
     command: >-
       Intel/Qwen3.6-27B-int4-AutoRound
+        --chat-template /vllm-workspace/qwen3.6-enhanced.jinja
+        --default-chat-template-kwargs '{"preserve_thinking": true}'
         --enable-auto-tool-choice
+        --exclude-tools-when-tool-choice-none
         --tool-call-parser qwen3_xml
         --max-model-len 256K
         --served-model-name Qwen3.6-27B
         --load-format fastsafetensors
         --reasoning-parser qwen3
-        --gpu-memory-utilization 0.74
+        --gpu-memory-utilization 0.80
+        --kv-cache-memory-bytes 81127160036
         --kv-cache-dtype fp8
         --enable-prefix-caching
         --max-num-batched-tokens 8K
@@ -22,6 +26,9 @@ services:
         --enable-chunked-prefill
         --spec-method mtp
         --spec-tokens 3
+    configs:
+      - source: qwen3_6-chat-template
+        target: /vllm-workspace/qwen3.6-enhanced.jinja
     deploy:
       placement:
         constraints:
@@ -29,7 +36,7 @@ services:
           - node.labels.type==gpu
       resources:
         reservations:
-          memory: 91G
+          memory: 94.8G
       restart_policy:
         condition: on-failure
     environment:
@@ -41,6 +48,13 @@ services:
     volumes:
       - /tmp/nvidia-mps:/tmp/nvidia-mps
       - huggingface:/root/.cache/huggingface
+
+# A custom chat template is used to prevent agents from stopping early by
+# suppressing empty tool calls that falsely signal task completion;
+# see https://github.com/QwenLM/Qwen3.6/issues/150#issuecomment-4372607711.
+configs:
+  qwen3_6-chat-template:
+    file: ./configs/models/qwen3.6-enhanced.jinja
 
 volumes:
   huggingface:
