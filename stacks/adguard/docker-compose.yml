@@ -1,0 +1,31 @@
+version: '3.8'
+
+services:
+  home:
+    image: adguard/adguardhome:latest
+    deploy:
+      labels:
+        traefik.enable: 'true'
+        traefik.http.routers.adguard.rule: Host(`adguard.quuxotic.net`)
+        traefik.http.services.adguard.loadbalancer.server.port: 3000
+      placement:
+        constraints: [node.labels.type==app]
+      restart_policy:
+        condition: on-failure
+    networks:
+      - traefik_proxy
+    ports:
+      - target: 53
+        published: 53
+        mode: ingress
+    volumes:
+      - home_conf:/opt/adguardhome/conf
+      - home_work:/opt/adguardhome/work
+
+networks:
+  traefik_proxy:
+    external: true
+
+volumes:
+  home_conf:
+  home_work:
