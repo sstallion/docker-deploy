@@ -6,6 +6,8 @@ services:
     configs:
       - source: bifrost
         target: /app/data/config.json
+    depends_on:
+      - qdrant
     deploy:
       labels:
         traefik.enable: 'true'
@@ -21,8 +23,31 @@ services:
     volumes:
       - bifrost:/app/data
 
+  docling:
+    image: ghcr.io/docling-project/docling-serve:v1.26.0
+    deploy:
+      labels:
+        traefik.enable: 'true'
+        traefik.http.routers.docling.rule: Host(`docling.quuxotic.net`)
+        traefik.http.services.docling.loadbalancer.server.port: 5001
+      placement:
+        constraints: [node.labels.type==app]
+      restart_policy:
+        condition: on-failure
+    environment:
+      DOCLING_SERVE_ENABLE_UI: 'true'
+      DOCLING_NUM_THREADS: 32
+      DOCLING_SERVE_ENG_LOC_NUM_WORKERS: 32
+      DOCLING_SERVE_MAX_SYNC_WAIT: 28800 # 8 hours
+      MKL_NUM_THREADS: 32
+      OMP_NUM_THREADS: 32
+
   open-webui:
     image: ghcr.io/open-webui/open-webui:0.9-slim
+    depends_on:
+      - bifrost
+      - docling
+      - qdrant
     deploy:
       labels:
         traefik.enable: 'true'
@@ -53,6 +78,7 @@ services:
       ENABLE_MESSAGE_RATING: 'False'
       VECTOR_DB: qdrant
       QDRANT_URI: http://qdrant:6333
+      CONTENT_EXTRACTION_ENGINE: docling
       ENABLE_WEB_SEARCH: 'True'
       WEB_SEARCH_RESULT_COUNT: 5
       WEB_SEARCH_ENGINE: exa
